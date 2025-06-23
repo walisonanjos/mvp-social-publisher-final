@@ -115,15 +115,15 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
           <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* CORREÇÃO: Voltando a usar htmlFor e id para conectar a label ao input */}
-          <div>
-            <label htmlFor="scheduleDate" className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer">Data do Agendamento</label>
-            <input type="date" id="scheduleDate" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
-          </div>
-          <div>
-            <label htmlFor="scheduleTime" className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer">Hora do Agendamento</label>
-            <input type="time" id="scheduleTime" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
-          </div>
+          {/* CORREÇÃO: Envolvendo o input com a label para tornar a área clicável */}
+          <label className="block cursor-pointer">
+            <span className="block text-sm font-medium text-gray-300 mb-1">Data do Agendamento</span>
+            <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
+          </label>
+          <label className="block cursor-pointer">
+            <span className="block text-sm font-medium text-gray-300 mb-1">Hora do Agendamento</span>
+            <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
+          </label>
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-2">Postar em:</h3>
