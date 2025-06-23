@@ -1,6 +1,6 @@
 // src/components/UploadForm.tsx
 'use client';
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef } from 'react'; // MUDANÇA: Importando o 'useRef'
 import { createClient } from '../lib/supabaseClient';
 
 interface UploadFormProps {
@@ -18,6 +18,10 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
   const [successMessage, setSuccessMessage] = useState('');
   const [postToYouTube, setPostToYouTube] = useState(false);
   const supabase = createClient();
+
+  // MUDANÇA: Criando "controles remotos" para os campos de data e hora
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const timeInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -115,12 +119,16 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
           <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* CORREÇÃO DEFINITIVA: Separando a label e o input e conectando-os com htmlFor e id */}
           <div>
-            <label htmlFor="scheduleDate" className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer">
+            {/* MUDANÇA: Adicionando um onClick na label que ativa o "controle remoto" */}
+            <label 
+              onClick={() => dateInputRef.current?.showPicker()} 
+              className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer"
+            >
               Data do Agendamento
             </label>
             <input 
+              ref={dateInputRef} // MUDANÇA: Conectando o "controle remoto" ao input
               id="scheduleDate" 
               type="date" 
               value={scheduleDate} 
@@ -129,10 +137,14 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
             />
           </div>
           <div>
-            <label htmlFor="scheduleTime" className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer">
+            <label 
+              onClick={() => timeInputRef.current?.showPicker()}
+              className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer"
+            >
               Hora do Agendamento
             </label>
             <input 
+              ref={timeInputRef}
               id="scheduleTime" 
               type="time" 
               value={scheduleTime} 
