@@ -1,7 +1,6 @@
 // src/components/UploadForm.tsx
 'use client';
-// MUDANÇA: 'useRef' foi removido da lista de importações.
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useRef } from 'react';
 import { createClient } from '../lib/supabaseClient';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
@@ -23,11 +22,13 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
   const [successMessage, setSuccessMessage] = useState('');
   const [postToYouTube, setPostToYouTube] = useState(false);
   const supabase = createClient();
-  
-  // MUDANÇA: A declaração de 'timeInputRef' que não era usada foi removida.
 
   const today = new Date();
-  const tenDaysFromNow = addDays(today, 9);
+  today.setHours(0, 0, 0, 0); // Normaliza para o início do dia para evitar bugs de fuso horário
+  
+  // CORREÇÃO: Lógica de cálculo do limite de 10 dias
+  const tenDaysFromNow = addDays(today, 9); // Hoje (dia 1) + 9 dias = 10 dias de janela
+  
   const availableTimes = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,8 +141,11 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
               selected={scheduleDate}
               onSelect={setScheduleDate}
               locale={ptBR}
-              fromDate={today}
-              toDate={tenDaysFromNow}
+              // CORREÇÃO: Usando a propriedade 'disabled' para ser mais explícito
+              disabled={{ 
+                before: today, 
+                after: tenDaysFromNow 
+              }}
               className="bg-gray-900 p-2 rounded-md"
               classNames={{
                 caption: 'flex justify-center py-2 mb-2 relative items-center',
