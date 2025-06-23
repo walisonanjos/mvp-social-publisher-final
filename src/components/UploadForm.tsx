@@ -1,7 +1,11 @@
 // src/components/UploadForm.tsx
 'use client';
-import { useState, FormEvent, useRef } from 'react'; // MUDANÇA: Importando o 'useRef'
+import { useState, FormEvent, useRef } from 'react';
 import { createClient } from '../lib/supabaseClient';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
+import { addDays } from 'date-fns'; // MUDANÇA: Importando função para adicionar dias
+import { ptBR } from 'date-fns/locale';
 
 interface UploadFormProps {
   onScheduleSuccess: () => void;
@@ -11,17 +15,19 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [scheduleDate, setScheduleDate] = useState('');
-  const [scheduleTime, setScheduleTime] = useState('');
+  const [scheduleDate, setScheduleDate] = useState<Date | undefined>(new Date());
+  // MUDANÇA: O estado do horário agora tem um valor inicial para o select
+  const [scheduleTime, setScheduleTime] = useState('09:00'); 
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [postToYouTube, setPostToYouTube] = useState(false);
   const supabase = createClient();
 
-  // MUDANÇA: Criando "controles remotos" para os campos de data e hora
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const timeInputRef = useRef<HTMLInputElement>(null);
+  // MUDANÇA: Definindo as datas para o limite de 10 dias
+  const today = new Date();
+  const tenDaysFromNow = addDays(today, 9); // Hoje + 9 dias = 10 dias de janela
+  const availableTimes = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -60,8 +66,12 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
       const videoUrl = cloudinaryData.secure_url;
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado.');
-
-      const scheduled_at = new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString();
+      
+      const [hours, minutes] = scheduleTime.split(':');
+      const finalScheduleDate = new Date(scheduleDate);
+      finalScheduleDate.setHours(parseInt(hours, 10));
+      finalScheduleDate.setMinutes(parseInt(minutes, 10));
+      const scheduled_at = finalScheduleDate.toISOString();
 
       const { error: insertError } = await supabase
         .from('videos')
@@ -82,8 +92,8 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
       setFile(null);
       setTitle('');
       setDescription('');
-      setScheduleDate('');
-      setScheduleTime('');
+      setScheduleDate(new Date());
+      setScheduleTime('09:00');
       setPostToYouTube(false);
       const fileInput = document.getElementById('file-upload') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
@@ -118,41 +128,58 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
           <label htmlFor="description" className="block text-sm font-medium text-gray-300">Descrição</label>
           <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div>
-            {/* MUDANÇA: Adicionando um onClick na label que ativa o "controle remoto" */}
-            <label 
-              onClick={() => dateInputRef.current?.showPicker()} 
-              className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer"
-            >
+             <label className="block text-sm font-medium text-gray-300 mb-2">
               Data do Agendamento
             </label>
-            <input 
-              ref={dateInputRef} // MUDANÇA: Conectando o "controle remoto" ao input
-              id="scheduleDate" 
-              type="date" 
-              value={scheduleDate} 
-              onChange={(e) => setScheduleDate(e.target.value)} 
-              className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" 
+            <DayPicker
+              mode="single"
+              selected={scheduleDate}
+              onSelect={setScheduleDate}
+              locale={ptBR}
+              fromDate={today}      // MUDANÇA: Bloqueia datas passadas
+              toDate={tenDaysFromNow} // MUDANÇA: Bloqueia datas após 10 dias
+              className="bg-gray-900 p-2 rounded-md"
+              classNames={{
+                caption: 'flex justify-center py-2 mb-2 relative items-center',
+                caption_label: 'text-sm font-medium text-white',
+                nav: 'flex items-center',
+                nav_button: 'h-6 w-6 bg-transparent hover:bg-gray-700 p-1 rounded-full',
+                nav_button_previous: 'absolute left-1',
+                nav_button_next: 'absolute right-1',
+                table: 'w-full border-collapse',
+                head_row: 'flex font-medium text-gray-400',
+                head_cell: 'w-8 font-normal text-xs',
+                row: 'flex w-full mt-2',
+                cell: 'text-white h-8 w-8 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-teal-500/20 rounded-full',
+                day: 'h-8 w-8 p-0 font-normal hover:bg-teal-500/30 rounded-full transition-colors',
+                day_selected: 'bg-teal-600 text-white hover:bg-teal-700 rounded-full',
+                day_today: 'text-teal-400',
+                day_outside: 'text-gray-500 opacity-50',
+                day_disabled: 'text-gray-600 opacity-50',
+              }}
             />
           </div>
           <div>
-            <label 
-              onClick={() => timeInputRef.current?.showPicker()}
-              className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer"
-            >
+            {/* MUDANÇA: Substituindo o input de hora por um select */}
+            <label htmlFor="scheduleTime" className="block text-sm font-medium text-gray-300 mb-2">
               Hora do Agendamento
             </label>
-            <input 
-              ref={timeInputRef}
-              id="scheduleTime" 
-              type="time" 
+            <select
+              id="scheduleTime"
               value={scheduleTime} 
               onChange={(e) => setScheduleTime(e.target.value)} 
-              className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" 
-            />
+              className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+            >
+              {availableTimes.map(time => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
           </div>
         </div>
+
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-2">Postar em:</h3>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
