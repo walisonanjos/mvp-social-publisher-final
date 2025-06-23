@@ -1,10 +1,11 @@
 // src/components/UploadForm.tsx
 'use client';
-import { useState, FormEvent, useRef } from 'react';
+// MUDANÇA: 'useRef' foi removido da lista de importações.
+import { useState, FormEvent } from 'react';
 import { createClient } from '../lib/supabaseClient';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
-import { addDays } from 'date-fns'; // MUDANÇA: Importando função para adicionar dias
+import { addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface UploadFormProps {
@@ -16,17 +17,17 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [scheduleDate, setScheduleDate] = useState<Date | undefined>(new Date());
-  // MUDANÇA: O estado do horário agora tem um valor inicial para o select
   const [scheduleTime, setScheduleTime] = useState('09:00'); 
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [postToYouTube, setPostToYouTube] = useState(false);
   const supabase = createClient();
+  
+  // MUDANÇA: A declaração de 'timeInputRef' que não era usada foi removida.
 
-  // MUDANÇA: Definindo as datas para o limite de 10 dias
   const today = new Date();
-  const tenDaysFromNow = addDays(today, 9); // Hoje + 9 dias = 10 dias de janela
+  const tenDaysFromNow = addDays(today, 9);
   const availableTimes = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,8 +140,8 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
               selected={scheduleDate}
               onSelect={setScheduleDate}
               locale={ptBR}
-              fromDate={today}      // MUDANÇA: Bloqueia datas passadas
-              toDate={tenDaysFromNow} // MUDANÇA: Bloqueia datas após 10 dias
+              fromDate={today}
+              toDate={tenDaysFromNow}
               className="bg-gray-900 p-2 rounded-md"
               classNames={{
                 caption: 'flex justify-center py-2 mb-2 relative items-center',
@@ -163,7 +164,6 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
             />
           </div>
           <div>
-            {/* MUDANÇA: Substituindo o input de hora por um select */}
             <label htmlFor="scheduleTime" className="block text-sm font-medium text-gray-300 mb-2">
               Hora do Agendamento
             </label>
