@@ -12,7 +12,6 @@ import { RefreshCw } from "lucide-react";
 import Navbar from "../components/Navbar";
 import AccountConnection from "../components/AccountConnection";
 
-// MUDANÇA: Adicionamos o campo 'target_youtube' à nossa interface
 export interface Video {
   id: string;
   title: string;
@@ -21,7 +20,7 @@ export interface Video {
   status: 'agendado' | 'postado' | 'falhou';
   youtube_video_id: string | null;
   post_error: string | null;
-  target_youtube: boolean | null; // Adicionado para sabermos para qual rede é o post
+  target_youtube: boolean | null;
 }
 
 export default function Home() {
@@ -42,11 +41,16 @@ export default function Home() {
   }, [videos]);
 
   const fetchPageData = useCallback(async (userId: string) => {
-    // A query para buscar vídeos agora seleciona todas as colunas
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayISO = today.toISOString();
+
+    // CORREÇÃO: Adicionando o filtro .gte() de volta para buscar apenas agendamentos futuros
     const { data: videosData, error: videosError } = await supabase
       .from("videos")
       .select("*")
       .eq("user_id", userId)
+      .gte('scheduled_at', todayISO) // gte = greater than or equal to (maior ou igual a)
       .order("scheduled_at", { ascending: true });
 
     if (videosError) console.error("Erro ao buscar vídeos:", videosError);
@@ -82,7 +86,6 @@ export default function Home() {
     return () => { authListener.subscription.unsubscribe(); };
   }, [supabase, fetchPageData]);
   
-  // O useEffect para Realtime agora também chama fetchPageData para garantir consistência
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel(`videos_realtime_user_${user.id}`)
@@ -137,7 +140,6 @@ export default function Home() {
 
       <main className="container mx-auto p-4 md:p-8">
         <Navbar />
-        {/* MUDANÇA: Passando a função de callback para o formulário */}
         <div className="mt-8">
           <UploadForm onScheduleSuccess={() => user && fetchPageData(user.id)} />
         </div>
