@@ -3,12 +3,10 @@
 import { useState, FormEvent } from 'react';
 import { createClient } from '../lib/supabaseClient';
 
-// MUDANÇA: Adicionada a interface para receber a função de callback
 interface UploadFormProps {
   onScheduleSuccess: () => void;
 }
 
-// MUDANÇA: O componente agora aceita a propriedade 'onScheduleSuccess'
 export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
@@ -61,7 +59,6 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
 
       const scheduled_at = new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString();
 
-      // MUDANÇA: Adicionamos o campo 'target_youtube' ao objeto de inserção
       const { error: insertError } = await supabase
         .from('videos')
         .insert({
@@ -76,11 +73,8 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
       if (insertError) throw insertError;
       
       setSuccessMessage('Seu vídeo foi agendado com sucesso!');
-      
-      // MUDANÇA: Chamando a função de callback para atualizar a lista na página principal
       onScheduleSuccess();
 
-      // Limpando o formulário
       setFile(null);
       setTitle('');
       setDescription('');
@@ -121,15 +115,15 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
           <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* CORREÇÃO: Envolvendo o input com a label para tornar a área clicável */}
-          <label className="block cursor-pointer">
-            <span className="block text-sm font-medium text-gray-300 mb-1">Data do Agendamento</span>
-            <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
-          </label>
-          <label className="block cursor-pointer">
-            <span className="block text-sm font-medium text-gray-300 mb-1">Hora do Agendamento</span>
-            <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
-          </label>
+          {/* CORREÇÃO: Voltando a usar htmlFor e id para conectar a label ao input */}
+          <div>
+            <label htmlFor="scheduleDate" className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer">Data do Agendamento</label>
+            <input type="date" id="scheduleDate" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
+          </div>
+          <div>
+            <label htmlFor="scheduleTime" className="block text-sm font-medium text-gray-300 mb-1 cursor-pointer">Hora do Agendamento</label>
+            <input type="time" id="scheduleTime" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
+          </div>
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-2">Postar em:</h3>

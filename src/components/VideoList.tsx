@@ -30,7 +30,7 @@ function VideoCard({ video, onDelete }: { video: Video; onDelete: (id: string) =
           {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
         </div>
       </div>
-      <div className="flex justify-between items-end">
+      <div className="flex justify-between items-end mt-auto">
         <div className="flex items-center gap-2 text-gray-400 text-sm">
           {format(new Date(video.scheduled_at), 'HH:mm')}
           {video.target_youtube && <Youtube size={16} className="text-red-500" />}
@@ -66,7 +66,9 @@ function VideoCard({ video, onDelete }: { video: Video; onDelete: (id: string) =
 
 export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
-  const sortedGroupKeys = Object.keys(groupedVideos).sort();
+  
+  // Na página de Histórico, os mais recentes vêm primeiro. Na principal, os próximos.
+  const sortedGroupKeys = Object.keys(groupedVideos).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
 
   const toggleGroup = (key: string) => {
     setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
@@ -84,7 +86,8 @@ export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
     <div className="space-y-6">
       {sortedGroupKeys.map((dateKey) => {
         const date = new Date(dateKey + 'T12:00:00');
-        const isGroupOpen = openGroups[dateKey] ?? true;
+        // MUDANÇA: O valor padrão agora é 'false' (fechado)
+        const isGroupOpen = openGroups[dateKey] ?? false;
         return (
           <div key={dateKey}>
             <button
@@ -92,7 +95,6 @@ export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
               className="flex justify-between items-center w-full text-left mb-3"
             >
               <h3 className="text-lg font-semibold text-teal-400 capitalize">
-                {/* CORREÇÃO: 'yyyy' para 'YYYY' para garantir a formatação correta do ano */}
                 {format(date, "eeee, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </h3>
               {isGroupOpen ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
