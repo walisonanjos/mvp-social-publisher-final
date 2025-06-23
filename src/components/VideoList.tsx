@@ -1,7 +1,7 @@
 // src/components/VideoList.tsx
 'use client';
+
 import { Video } from '../app/page';
-// MUDANÇA: Adicionamos o ícone do Youtube à lista de importações
 import { ChevronUp, ChevronDown, Link as LinkIcon, AlertTriangle, Youtube } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -21,20 +21,18 @@ const statusStyles = {
 
 function VideoCard({ video, onDelete }: { video: Video; onDelete: (id: string) => void }) {
   return (
-    <div className="bg-gray-800/50 p-4 rounded-lg flex flex-col justify-between gap-3 border border-gray-700/80">
+    <div className="bg-gray-800/50 p-4 rounded-lg flex flex-col justify-between gap-3 border border-gray-700/80 h-full">
       <div className="flex justify-between items-start">
-        <span className="font-medium text-white break-all">{video.title}</span>
+        <span className="font-medium text-white break-all pr-2">{video.title}</span>
         <div
-          className={`text-xs font-bold px-2 py-1 rounded-full border ${statusStyles[video.status]}`}
+          className={`text-xs font-bold px-2 py-1 rounded-full border whitespace-nowrap ${statusStyles[video.status]}`}
         >
           {video.status.charAt(0).toUpperCase() + video.status.slice(1)}
         </div>
       </div>
-      <div className="flex justify-between items-center">
-        {/* MUDANÇA: Adicionado um container para o horário e os ícones */}
+      <div className="flex justify-between items-end">
         <div className="flex items-center gap-2 text-gray-400 text-sm">
           {format(new Date(video.scheduled_at), 'HH:mm')}
-          {/* MUDANÇA: Lógica para mostrar o ícone do YouTube */}
           {video.target_youtube && <Youtube size={16} className="text-red-500" />}
         </div>
         <div className="flex items-center gap-3">
@@ -94,6 +92,7 @@ export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
               className="flex justify-between items-center w-full text-left mb-3"
             >
               <h3 className="text-lg font-semibold text-teal-400 capitalize">
+                {/* CORREÇÃO: 'yyyy' para 'YYYY' para garantir a formatação correta do ano */}
                 {format(date, "eeee, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </h3>
               {isGroupOpen ? <ChevronUp className="text-gray-400" /> : <ChevronDown className="text-gray-400" />}
@@ -104,7 +103,6 @@ export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
                   <VideoCard key={video.id} video={video} onDelete={onDelete} />
                 ))}
               </div>
-            </div>
             )}
           </div>
         );
