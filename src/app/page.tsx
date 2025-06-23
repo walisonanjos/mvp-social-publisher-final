@@ -12,22 +12,17 @@ import { RefreshCw } from "lucide-react";
 import Navbar from "../components/Navbar";
 import AccountConnection from "../components/AccountConnection";
 
-// Dentro de src/app/page.tsx
-
+// MUDANÇA: Adicionamos o campo 'target_youtube' à nossa interface
 export interface Video {
   id: string;
   title: string;
   video_url: string;
   scheduled_at: string;
-  // MUDANÇAS AQUI:
   status: 'agendado' | 'postado' | 'falhou';
   youtube_video_id: string | null;
   post_error: string | null;
-  // Removidas as colunas target_* que não estamos usando
+  target_youtube: boolean | null; // Adicionado para sabermos para qual rede é o post
 }
-
-// O resto do arquivo page.tsx pode continuar o mesmo por enquanto,
-// apenas garanta que a interface Video esteja atualizada.
 
 export default function Home() {
   const supabase = createClient();
@@ -47,21 +42,16 @@ export default function Home() {
   }, [videos]);
 
   const fetchPageData = useCallback(async (userId: string) => {
-    // Busca os vídeos agendados (sem alteração aqui)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayISO = today.toISOString();
+    // A query para buscar vídeos agora seleciona todas as colunas
     const { data: videosData, error: videosError } = await supabase
       .from("videos")
       .select("*")
       .eq("user_id", userId)
-      .gte('scheduled_at', todayISO)
       .order("scheduled_at", { ascending: true });
 
     if (videosError) console.error("Erro ao buscar vídeos:", videosError);
     else setVideos(videosData || []);
 
-    // MUDANÇA: Corrigindo a forma de buscar e ler a contagem de tokens
     const { count, error: tokenError } = await supabase
       .from('youtube_tokens')
       .select('*', { count: 'exact', head: true })
@@ -71,7 +61,6 @@ export default function Home() {
         console.error("Erro ao verificar token do YouTube:", tokenError);
     }
     
-    // MUDANÇA: Usa a variável 'count' diretamente, que é um número ou null
     setIsYouTubeConnected(count ? count > 0 : false); 
 
   }, [supabase]);
@@ -93,6 +82,7 @@ export default function Home() {
     return () => { authListener.subscription.unsubscribe(); };
   }, [supabase, fetchPageData]);
   
+  // O useEffect para Realtime agora também chama fetchPageData para garantir consistência
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel(`videos_realtime_user_${user.id}`)
@@ -147,7 +137,10 @@ export default function Home() {
 
       <main className="container mx-auto p-4 md:p-8">
         <Navbar />
-        <div className="mt-8"><UploadForm /></div>
+        {/* MUDANÇA: Passando a função de callback para o formulário */}
+        <div className="mt-8">
+          <UploadForm onScheduleSuccess={() => user && fetchPageData(user.id)} />
+        </div>
         <div className="mt-8">
           <AccountConnection 
             isYouTubeConnected={isYouTubeConnected}

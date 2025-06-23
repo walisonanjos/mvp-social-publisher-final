@@ -1,7 +1,8 @@
 // src/components/VideoList.tsx
 'use client';
 import { Video } from '../app/page';
-import { ChevronUp, ChevronDown, Link as LinkIcon, AlertTriangle } from 'lucide-react';
+// MUDANÇA: Adicionamos o ícone do Youtube à lista de importações
+import { ChevronUp, ChevronDown, Link as LinkIcon, AlertTriangle, Youtube } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -30,11 +31,13 @@ function VideoCard({ video, onDelete }: { video: Video; onDelete: (id: string) =
         </div>
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-gray-400 text-sm">
+        {/* MUDANÇA: Adicionado um container para o horário e os ícones */}
+        <div className="flex items-center gap-2 text-gray-400 text-sm">
           {format(new Date(video.scheduled_at), 'HH:mm')}
+          {/* MUDANÇA: Lógica para mostrar o ícone do YouTube */}
+          {video.target_youtube && <Youtube size={16} className="text-red-500" />}
         </div>
         <div className="flex items-center gap-3">
-          {/* Ícone de Link para Vídeos Postados */}
           {video.status === 'postado' && video.youtube_video_id && (
             <Link
               href={`https://youtu.be/${video.youtube_video_id}`}
@@ -46,7 +49,6 @@ function VideoCard({ video, onDelete }: { video: Video; onDelete: (id: string) =
               <LinkIcon size={16} />
             </Link>
           )}
-          {/* Ícone de Erro para Vídeos que Falharam */}
           {video.status === 'falhou' && video.post_error && (
             <div className="text-red-400 cursor-help" title={`Motivo da falha: ${video.post_error}`}>
               <AlertTriangle size={16} />
@@ -83,7 +85,7 @@ export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
   return (
     <div className="space-y-6">
       {sortedGroupKeys.map((dateKey) => {
-        const date = new Date(dateKey + 'T12:00:00'); // Adiciona hora para evitar problemas de fuso
+        const date = new Date(dateKey + 'T12:00:00');
         const isGroupOpen = openGroups[dateKey] ?? true;
         return (
           <div key={dateKey}>
@@ -102,6 +104,7 @@ export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
                   <VideoCard key={video.id} video={video} onDelete={onDelete} />
                 ))}
               </div>
+            </div>
             )}
           </div>
         );
