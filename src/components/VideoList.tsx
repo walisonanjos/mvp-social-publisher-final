@@ -11,6 +11,7 @@ import { ptBR } from 'date-fns/locale';
 interface VideoListProps {
   groupedVideos: { [key: string]: Video[] };
   onDelete: (videoId: string) => void;
+  sortOrder?: 'asc' | 'desc'; // Nova prop para controlar a ordem
 }
 
 const statusStyles = {
@@ -64,20 +65,27 @@ function VideoCard({ video, onDelete }: { video: Video; onDelete: (id: string) =
   );
 }
 
-export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
+// CORREÇÃO: Adicionando a prop sortOrder com um valor padrão
+export default function VideoList({ groupedVideos, onDelete, sortOrder = 'desc' }: VideoListProps) {
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   
-  // Na página de Histórico, os mais recentes vêm primeiro. Na principal, os próximos.
-  const sortedGroupKeys = Object.keys(groupedVideos).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  // CORREÇÃO: A ordenação agora respeita a prop sortOrder
+  const sortedGroupKeys = Object.keys(groupedVideos).sort((a, b) => {
+    if (sortOrder === 'asc') {
+      return new Date(a).getTime() - new Date(b).getTime();
+    }
+    return new Date(b).getTime() - new Date(a).getTime(); // desc é o padrão
+  });
 
   const toggleGroup = (key: string) => {
     setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   if (sortedGroupKeys.length === 0) {
+    const message = sortOrder === 'asc' ? 'Nenhum post no histórico.' : 'Você ainda não tem nenhum agendamento.';
     return (
       <div className="text-center py-10 bg-gray-800/30 rounded-lg">
-        <p className="text-gray-400">Você ainda não tem nenhum agendamento.</p>
+        <p className="text-gray-400">{message}</p>
       </div>
     );
   }
@@ -86,8 +94,7 @@ export default function VideoList({ groupedVideos, onDelete }: VideoListProps) {
     <div className="space-y-6">
       {sortedGroupKeys.map((dateKey) => {
         const date = new Date(dateKey + 'T12:00:00');
-        // MUDANÇA: O valor padrão agora é 'false' (fechado)
-        const isGroupOpen = openGroups[dateKey] ?? false;
+        const isGroupOpen = openGroups[dateKey] ?? true;
         return (
           <div key={dateKey}>
             <button

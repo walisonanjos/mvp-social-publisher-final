@@ -1,6 +1,5 @@
 // src/components/UploadForm.tsx
 'use client';
-// MUDANÇA: 'useRef' foi removido da lista de importações.
 import { useState, FormEvent } from 'react';
 import { createClient } from '../lib/supabaseClient';
 import { DayPicker } from 'react-day-picker';
@@ -23,12 +22,12 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
   const [successMessage, setSuccessMessage] = useState('');
   const [postToYouTube, setPostToYouTube] = useState(false);
   const supabase = createClient();
-  
-  // MUDANÇA: A declaração de 'timeInputRef' que não era usada foi removida.
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tenDaysFromNow = addDays(today, 9);
+  today.setHours(0, 0, 0, 0); // Normaliza para o início do dia
+  
+  const tenDaysFromNow = addDays(today, 9); // Hoje (dia 1) + 9 dias = 10 dias no total
+  
   const availableTimes = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,6 +115,7 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
     <div className="bg-gray-800 p-8 rounded-lg shadow-lg border border-gray-700">
       <h2 className="text-xl font-bold text-white mb-6">Novo Agendamento</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* ...campos de file, title, description... */}
         <div>
           <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300 mb-2">
             Arquivo de Vídeo
@@ -141,8 +141,11 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
               selected={scheduleDate}
               onSelect={setScheduleDate}
               locale={ptBR}
-              fromDate={today}
-              toDate={tenDaysFromNow}
+              // CORREÇÃO: Usando a propriedade 'disabled' para ser mais explícito
+              disabled={{ 
+                before: today, 
+                after: tenDaysFromNow 
+              }}
               className="bg-gray-900 p-2 rounded-md"
               classNames={{
                 caption: 'flex justify-center py-2 mb-2 relative items-center',
@@ -180,7 +183,7 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
             </select>
           </div>
         </div>
-
+        {/* ...resto do formulário... */}
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-2">Postar em:</h3>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
