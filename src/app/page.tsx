@@ -156,7 +156,11 @@ export default function Home() {
                 <RefreshCw size={14} /><span>Atualizar</span>
             </button>
         </div>
-        <VideoList groupedVideos={groupedVideos} onDelete={handleDeleteVideo} />
+        <VideoList 
+  groupedVideos={groupedVideos} 
+  onDelete={handleDeleteVideo} 
+  sortOrder="asc" 
+/>
       </main>
     </div>
   );

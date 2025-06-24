@@ -5,13 +5,13 @@ import { Video } from '../app/page';
 import { ChevronUp, ChevronDown, Link as LinkIcon, AlertTriangle, Youtube } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 interface VideoListProps {
   groupedVideos: { [key: string]: Video[] };
   onDelete: (videoId: string) => void;
-  sortOrder?: 'asc' | 'desc'; // Nova prop para controlar a ordem
+  sortOrder?: 'asc' | 'desc'; // Esta prop controla a ordem dos grupos
 }
 
 const statusStyles = {
@@ -65,16 +65,16 @@ function VideoCard({ video, onDelete }: { video: Video; onDelete: (id: string) =
   );
 }
 
-// CORREÇÃO: Adicionando a prop sortOrder com um valor padrão
+// O valor padrão de sortOrder continua 'desc', mas agora o usamos de forma mais inteligente.
 export default function VideoList({ groupedVideos, onDelete, sortOrder = 'desc' }: VideoListProps) {
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   
-  // CORREÇÃO: A ordenação agora respeita a prop sortOrder
+  // A ordenação agora respeita a prop sortOrder para exibir os grupos na ordem correta.
   const sortedGroupKeys = Object.keys(groupedVideos).sort((a, b) => {
     if (sortOrder === 'asc') {
-      return new Date(a).getTime() - new Date(b).getTime();
+      return new Date(a).getTime() - new Date(b).getTime(); // Ordem crescente para agendamentos
     }
-    return new Date(b).getTime() - new Date(a).getTime(); // desc é o padrão
+    return new Date(b).getTime() - new Date(a).getTime(); // Ordem decrescente para histórico
   });
 
   const toggleGroup = (key: string) => {
@@ -82,7 +82,7 @@ export default function VideoList({ groupedVideos, onDelete, sortOrder = 'desc' 
   };
 
   if (sortedGroupKeys.length === 0) {
-    const message = sortOrder === 'asc' ? 'Nenhum post no histórico.' : 'Você ainda não tem nenhum agendamento.';
+    const message = sortOrder === 'asc' ? 'Você ainda não tem nenhum agendamento futuro.' : 'Nenhum post no histórico.';
     return (
       <div className="text-center py-10 bg-gray-800/30 rounded-lg">
         <p className="text-gray-400">{message}</p>
@@ -93,8 +93,14 @@ export default function VideoList({ groupedVideos, onDelete, sortOrder = 'desc' 
   return (
     <div className="space-y-6">
       {sortedGroupKeys.map((dateKey) => {
-        const date = new Date(dateKey + 'T12:00:00');
-        const isGroupOpen = openGroups[dateKey] ?? true;
+        const date = new Date(dateKey + 'T12:00:00'); // Adiciona hora para evitar problemas de fuso
+        
+        // CORREÇÃO: Nova lógica para decidir se um grupo começa aberto ou fechado.
+        // - Na página de agendamentos (asc), só o dia de hoje começa aberto.
+        // - Na página de histórico (desc), todos começam fechados.
+        const defaultState = sortOrder === 'asc' ? isToday(date) : false;
+        const isGroupOpen = openGroups[dateKey] ?? defaultState;
+
         return (
           <div key={dateKey}>
             <button
