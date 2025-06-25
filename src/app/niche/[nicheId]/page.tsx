@@ -1,20 +1,17 @@
-// src/app/niche/[nicheId]/page.tsx
+import NichePageClient from "../../../components/NichePageClient";
 
-// Importando nosso novo componente de cliente
-import NichePageClient from "./NichePageClient";
-
-// Definindo o tipo de props que a página recebe do Next.js
-type NichePageProps = {
+// Tipagem para as props que a página recebe do Next.js
+type Props = {
   params: {
     nicheId: string;
   };
 };
 
-// Este é agora um Server Component. Note que não há "use client" nem hooks.
-export default function NichePage({ params }: NichePageProps) {
+// Este é um Server Component (sem "use client"). É assíncrono por padrão.
+export default function NichePage({ params }: Props) {
+  // Extraímos o nicheId dos parâmetros da URL...
   const { nicheId } = params;
 
-  // A única responsabilidade desta página é renderizar o componente de cliente,
-  // passando o nicheId que ela recebeu da URL.
+  // ...e passamos como uma prop simples para o nosso componente de cliente.
   return <NichePageClient nicheId={nicheId} />;
 }
