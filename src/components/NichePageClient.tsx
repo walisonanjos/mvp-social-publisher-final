@@ -1,5 +1,4 @@
 // src/components/NichePageClient.tsx
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
@@ -12,7 +11,7 @@ import UploadForm from "./UploadForm";
 import VideoList from "./VideoList";
 import Navbar from "./Navbar";
 import AccountConnection from "./AccountConnection";
-// CORREÇÃO: Importando o tipo 'Video' do nosso novo arquivo central de tipos
+// CORREÇÃO: Agora este import puxa a definição completa e unificada de 'Video'.
 import { Video } from "@/types"; 
 
 export default function NichePageClient({ nicheId }: { nicheId: string }) {
@@ -34,16 +33,13 @@ export default function NichePageClient({ nicheId }: { nicheId: string }) {
   }, [videos]);
 
   const fetchPageData = useCallback(async (userId: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayISO = today.toISOString();
-
+    // Como nossa query agora é 'select *', o Supabase retornará todos os campos.
+    // O tipo 'Video' agora corresponde a todos os campos possíveis da tabela.
     const { data: videosData, error: videosError } = await supabase
       .from("videos")
-      .select("*")
+      .select<"*", Video>("*") // Especificando o tipo para o select
       .eq("user_id", userId)
       .eq("niche_id", nicheId)
-      .gte('scheduled_at', todayISO)
       .order("scheduled_at", { ascending: true });
 
     if (videosError) console.error("Erro ao buscar vídeos:", videosError);
@@ -68,16 +64,24 @@ export default function NichePageClient({ nicheId }: { nicheId: string }) {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      if (user) { await fetchPageData(user.id); }
+      if (user) { 
+        await fetchPageData(user.id); 
+      }
       setLoading(false);
     };
     setupPage();
-  }, [supabase, fetchPageData]);
-
+  // A dependência de `fetchPageData` está correta.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]);
+  
   const handleDeleteVideo = async (videoId: string) => {
     setVideos(current => current.filter(v => v.id !== videoId));
     const { error } = await supabase.from('videos').delete().eq('id', videoId);
     if (error) console.error('Erro ao deletar agendamento:', error);
+    else {
+      // Opcional: recarregar os dados para ter certeza que está sincronizado.
+      if(user) await fetchPageData(user.id);
+    }
   };
 
   const handleDisconnectYouTube = async () => {
@@ -116,10 +120,10 @@ export default function NichePageClient({ nicheId }: { nicheId: string }) {
       <main className="container mx-auto p-4 md:p-8">
         <Navbar nicheId={nicheId} />
         <div className="mt-8">
-          <UploadForm onScheduleSuccess={() => fetchPageData(user.id)} nicheId={nicheId} />
+          <UploadForm onScheduleSuccess={() => user && fetchPageData(user.id)} nicheId={nicheId} />
         </div>
         <div className="mt-8">
-          <AccountConnection
+          <AccountConnection 
             isYouTubeConnected={isYouTubeConnected}
             onDisconnectYouTube={handleDisconnectYouTube}
             nicheId={nicheId}
@@ -128,7 +132,7 @@ export default function NichePageClient({ nicheId }: { nicheId: string }) {
         <hr className="my-8 border-gray-700" />
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold tracking-tight text-white">Meus Agendamentos</h2>
-          <button onClick={() => fetchPageData(user.id)} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors" title="Atualizar lista">
+          <button onClick={() => user && fetchPageData(user.id)} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors" title="Atualizar lista">
             <RefreshCw size={14} /><span>Atualizar</span>
           </button>
         </div>

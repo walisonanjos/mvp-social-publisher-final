@@ -1,7 +1,8 @@
 // src/components/VideoList.tsx
 'use client';
 
-import { Video } from '../app/page';
+// CORREÇÃO: Importando o tipo 'Video' do nosso arquivo central de tipos.
+import { Video } from '@/types';
 import { ChevronUp, ChevronDown, Link as LinkIcon, AlertTriangle, Youtube } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -11,7 +12,7 @@ import { ptBR } from 'date-fns/locale';
 interface VideoListProps {
   groupedVideos: { [key: string]: Video[] };
   onDelete: (videoId: string) => void;
-  sortOrder?: 'asc' | 'desc'; // Esta prop controla a ordem dos grupos
+  sortOrder?: 'asc' | 'desc';
 }
 
 const statusStyles = {
@@ -65,16 +66,14 @@ function VideoCard({ video, onDelete }: { video: Video; onDelete: (id: string) =
   );
 }
 
-// O valor padrão de sortOrder continua 'desc', mas agora o usamos de forma mais inteligente.
 export default function VideoList({ groupedVideos, onDelete, sortOrder = 'desc' }: VideoListProps) {
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({});
   
-  // A ordenação agora respeita a prop sortOrder para exibir os grupos na ordem correta.
   const sortedGroupKeys = Object.keys(groupedVideos).sort((a, b) => {
     if (sortOrder === 'asc') {
-      return new Date(a).getTime() - new Date(b).getTime(); // Ordem crescente para agendamentos
+      return new Date(a).getTime() - new Date(b).getTime();
     }
-    return new Date(b).getTime() - new Date(a).getTime(); // Ordem decrescente para histórico
+    return new Date(b).getTime() - new Date(a).getTime();
   });
 
   const toggleGroup = (key: string) => {
@@ -93,11 +92,7 @@ export default function VideoList({ groupedVideos, onDelete, sortOrder = 'desc' 
   return (
     <div className="space-y-6">
       {sortedGroupKeys.map((dateKey) => {
-        const date = new Date(dateKey + 'T12:00:00'); // Adiciona hora para evitar problemas de fuso
-        
-        // CORREÇÃO: Nova lógica para decidir se um grupo começa aberto ou fechado.
-        // - Na página de agendamentos (asc), só o dia de hoje começa aberto.
-        // - Na página de histórico (desc), todos começam fechados.
+        const date = new Date(dateKey + 'T12:00:00');
         const defaultState = sortOrder === 'asc' ? isToday(date) : false;
         const isGroupOpen = openGroups[dateKey] ?? defaultState;
 

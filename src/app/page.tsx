@@ -4,33 +4,19 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from 'next/navigation';
-// MUDANÇA: O componente 'Link' foi removido das importações.
 import { createClient } from "../lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
 import Auth from "../components/Auth";
 import { Loader2 } from "lucide-react";
+// CORREÇÃO: Importando o tipo 'Niche' do nosso arquivo central de tipos.
+import { Niche } from '@/types';
 
-export interface Niche {
-  id: string;
-  name: string;
-}
-
-export interface Video {
-  id: string;
-  title: string;
-  video_url: string;
-  scheduled_at: string;
-  status: 'agendado' | 'postado' | 'falhou';
-  youtube_video_id: string | null;
-  post_error: string | null;
-  target_youtube: boolean | null;
-}
+// CORREÇÃO: A definição de 'Video' foi removida daqui.
 
 export default function HomePage() {
   const supabase = createClient();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  // MUDANÇA: Removemos 'setNiches' pois não é mais utilizado nesta página.
   const [niches, setNichesState] = useState<Niche[]>([]);
   const [loading, setLoading] = useState(true);
   const [newNicheName, setNewNicheName] = useState("");
@@ -55,7 +41,6 @@ export default function HomePage() {
           } else if (nichesData.length > 1) {
              router.push('/niches');
           } else {
-            // Se não tiver nichos (length === 0), seta o estado para mostrar o form de criação.
             setNichesState([]);
           }
         }
@@ -127,7 +112,6 @@ export default function HomePage() {
     );
   }
   
-  // Se o usuário já tiver nichos, a lógica acima redireciona, então este retorno é um fallback.
   return (
        <div className="flex items-center justify-center min-h-screen bg-gray-900">
         <p className="text-white">Redirecionando...</p>
