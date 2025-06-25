@@ -1,7 +1,9 @@
+// src/components/NichePageClient.tsx
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { createClient } from "../lib/supabaseClient";
+import { createClient } from "@/lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
 import { RefreshCw, ArrowLeft, Loader2 } from "lucide-react";
 import Link from 'next/link';
@@ -10,10 +12,9 @@ import UploadForm from "./UploadForm";
 import VideoList from "./VideoList";
 import Navbar from "./Navbar";
 import AccountConnection from "./AccountConnection";
-// Ajuste o caminho de importação se necessário
-import { Video } from "../app/page"; 
+// CORREÇÃO: Importando o tipo 'Video' do nosso novo arquivo central de tipos
+import { Video } from "@/types"; 
 
-// Este componente agora recebe 'nicheId' como uma prop simples
 export default function NichePageClient({ nicheId }: { nicheId: string }) {
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);

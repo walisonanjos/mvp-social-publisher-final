@@ -9,11 +9,8 @@ type Props = {
   };
 };
 
-// Este é um Server Component (sem "use client"). É assíncrono por padrão.
+// Este é um Server Component (sem "use client").
 export default function NichePage({ params }: Props) {
-  // Extraímos o nicheId dos parâmetros da URL...
   const { nicheId } = params;
-
-  // ...e passamos como uma prop simples para o nosso componente de cliente.
   return <NichePageClient nicheId={nicheId} />;
 }
