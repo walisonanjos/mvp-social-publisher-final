@@ -14,14 +14,15 @@ import Navbar from "../../../components/Navbar";
 import AccountConnection from "../../../components/AccountConnection";
 import { Video } from "../../page";
 
-// CORREÇÃO: O nome do tipo está correto aqui (NichePageProps com 'N')
+// MUDANÇA: Definindo um tipo formal para as propriedades da página
 type NichePageProps = {
   params: {
     nicheId: string;
   };
+  searchParams: { [key: string]: string | string[] | undefined };
 };
 
-// CORREÇÃO: Usando o tipo correto aqui
+// MUDANÇA: Usando o novo tipo 'NichePageProps'
 export default function NichePage({ params }: NichePageProps) {
   const { nicheId } = params;
   const supabase = createClient();
