@@ -21,12 +21,15 @@
         "name": "next"
       }
     ],
+    "target": "ES2017",
+    // --- INÍCIO DA CORREÇÃO ---
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
       ]
-    },
-    "target": "ES2017"
+    }
+    // --- FIM DA CORREÇÃO ---
   },
   "include": [
     "next-env.d.ts",
