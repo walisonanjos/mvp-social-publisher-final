@@ -4,11 +4,10 @@
 
 import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+// MUDANÇA: O componente 'Link' foi removido das importações.
 import { createClient } from "../lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
 import Auth from "../components/Auth";
-// MUDANÇA: O ícone 'PlusCircle' foi removido das importações.
 import { Loader2 } from "lucide-react";
 
 export interface Niche {
@@ -31,7 +30,8 @@ export default function HomePage() {
   const supabase = createClient();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [niches, setNiches] = useState<Niche[]>([]);
+  // MUDANÇA: Removemos 'setNiches' pois não é mais utilizado nesta página.
+  const [niches, setNichesState] = useState<Niche[]>([]);
   const [loading, setLoading] = useState(true);
   const [newNicheName, setNewNicheName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -54,6 +54,9 @@ export default function HomePage() {
             router.push(`/niche/${nichesData[0].id}`);
           } else if (nichesData.length > 1) {
              router.push('/niches');
+          } else {
+            // Se não tiver nichos (length === 0), seta o estado para mostrar o form de criação.
+            setNichesState([]);
           }
         }
       }
@@ -118,6 +121,7 @@ export default function HomePage() {
                         {isCreating ? <Loader2 className="animate-spin" /> : 'Criar Workspace e Entrar'}
                     </button>
                 </form>
+                 <button onClick={() => supabase.auth.signOut()} className="mt-12 text-sm text-gray-500 hover:text-white transition-colors">Sair</button>
             </div>
         </div>
     );
