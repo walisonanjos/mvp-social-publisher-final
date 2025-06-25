@@ -1,4 +1,6 @@
-import NichePageClient from "../../../components/NichePageClient";
+// src/app/niche/[nicheId]/page.tsx
+
+import NichePageClient from "@/components/NichePageClient";
 
 // Tipagem para as props que a página recebe do Next.js
 type Props = {
