@@ -29,12 +29,46 @@ export default function AccountConnection({ isYouTubeConnected, onDisconnectYouT
       }
     } catch (error) {
       console.error('Erro ao gerar URL de autorização:', error);
+      alert('Não foi possível iniciar a conexão com o YouTube. Tente novamente.');
       setIsLoading(false);
     }
   };
 
   return (
-    // O JSX é visualmente o mesmo
-    // ...
+    <div className="bg-gray-800 p-8 rounded-lg shadow-lg border border-gray-700">
+      <h2 className="text-xl font-bold text-white mb-4">Conectar Contas</h2>
+      <p className="text-gray-400 mb-6">
+        {isYouTubeConnected 
+          ? 'Sua conta do YouTube está pronta para postagens neste workspace.' 
+          : 'Conecte suas contas de redes sociais para começar a agendar.'
+        }
+      </p>
+
+      {isYouTubeConnected ? (
+        // UI para quando a conta ESTÁ conectada
+        <div className="p-4 bg-green-900/50 border border-green-500/30 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="text-green-400" size={24} />
+            <span className="font-medium text-green-300">YouTube Conectado</span>
+          </div>
+          <button
+            onClick={onDisconnectYouTube}
+            className="text-xs text-red-400 hover:text-red-300 hover:underline"
+          >
+            Desconectar
+          </button>
+        </div>
+      ) : (
+        // UI para quando a conta NÃO ESTÁ conectada
+        <button
+          onClick={handleConnect}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-red-600/50 bg-red-600/20 hover:bg-red-600/30 text-white font-bold rounded-lg transition-colors disabled:opacity-50"
+        >
+          <Youtube size={20} />
+          <span>{isLoading ? 'Aguarde...' : 'Conectar com YouTube'}</span>
+        </button>
+      )}
+    </div>
   );
 }
