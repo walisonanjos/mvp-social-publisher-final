@@ -14,7 +14,15 @@ import Navbar from "../../../components/Navbar";
 import AccountConnection from "../../../components/AccountConnection";
 import { Video } from "../../page";
 
-export default function NichePage({ params }: { params: { nicheId: string } }) {
+// MUDANÇA: Definindo um tipo formal para as propriedades da página
+type NichePageProps = {
+  params: {
+    nicheId: string;
+  };
+};
+
+// MUDANÇA: Usando o novo tipo 'NichePageProps'
+export default function NichePage({ params }: NichePageProps) {
   const { nicheId } = params;
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
@@ -53,7 +61,7 @@ export default function NichePage({ params }: { params: { nicheId: string } }) {
       .from('social_connections')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('niche_id', nicheId)
+      .eq('niche_id', nicheId) 
       .eq('platform', 'youtube'); 
     
     setIsYouTubeConnected(!!count && count > 0); 
