@@ -14,7 +14,7 @@ import Navbar from "../../../components/Navbar";
 import AccountConnection from "../../../components/AccountConnection";
 import { Video } from "../../page";
 
-// MUDANÇA: Definindo um tipo formal para as propriedades da página
+// MUDANÇA: Definindo um tipo formal e completo para as propriedades da página
 type NichePageProps = {
   params: {
     nicheId: string;
