@@ -2,16 +2,21 @@
 
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import Auth from "../components/Auth";
-import UploadForm from "../components/UploadForm";
-import VideoList from "../components/VideoList";
+import { useEffect, useState, FormEvent } from "react";
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from "../lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
-import { RefreshCw } from "lucide-react";
-import Navbar from "../components/Navbar";
-import AccountConnection from "../components/AccountConnection";
+import Auth from "../components/Auth";
+import { Loader2, PlusCircle } from "lucide-react";
 
+// Definindo a interface para nossos nichos
+export interface Niche {
+  id: string;
+  name: string;
+}
+
+// A interface Video agora vive aqui, mas poderia ser movida para um arquivo de tipos no futuro
 export interface Video {
   id: string;
   title: string;
@@ -23,145 +28,128 @@ export interface Video {
   target_youtube: boolean | null;
 }
 
-export default function Home() {
+export default function HomePage() {
   const supabase = createClient();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [niches, setNiches] = useState<Niche[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isYouTubeConnected, setIsYouTubeConnected] = useState(false);
-
-  const groupedVideos = useMemo(() => {
-    const groups: { [key: string]: Video[] } = {};
-    videos.forEach((video) => {
-      const dateKey = new Date(video.scheduled_at).toISOString().split('T')[0];
-      if (!groups[dateKey]) { groups[dateKey] = []; }
-      groups[dateKey].push(video);
-    });
-    return groups;
-  }, [videos]);
-
-  const fetchPageData = useCallback(async (userId: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayISO = today.toISOString();
-
-    // CORREÇÃO: Adicionando o filtro .gte() de volta para buscar apenas agendamentos futuros
-    const { data: videosData, error: videosError } = await supabase
-      .from("videos")
-      .select("*")
-      .eq("user_id", userId)
-      .gte('scheduled_at', todayISO) // gte = greater than or equal to (maior ou igual a)
-      .order("scheduled_at", { ascending: true });
-
-    if (videosError) console.error("Erro ao buscar vídeos:", videosError);
-    else setVideos(videosData || []);
-
-    const { count, error: tokenError } = await supabase
-      .from('youtube_tokens')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-    
-    if (tokenError) {
-        console.error("Erro ao verificar token do YouTube:", tokenError);
-    }
-    
-    setIsYouTubeConnected(count ? count > 0 : false); 
-
-  }, [supabase]);
-
+  const [newNicheName, setNewNicheName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+  
+  // Efeito para buscar o usuário e seus nichos existentes
   useEffect(() => {
-    const setupPage = async () => {
+    const fetchUserAndNiches = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      if (user) { await fetchPageData(user.id); }
+
+      if (user) {
+        const { data: nichesData, error } = await supabase
+          .from('niches')
+          .select('id, name')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error("Erro ao buscar nichos:", error);
+        } else if (nichesData) {
+          // Se o usuário tem apenas um nicho, redireciona direto para ele
+          if (nichesData.length === 1) {
+            router.push(`/niche/${nichesData[0].id}`);
+          } else {
+            setNiches(nichesData);
+          }
+        }
+      }
       setLoading(false);
     };
-    setupPage();
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) { fetchPageData(currentUser.id); } 
-      else { setVideos([]); setIsYouTubeConnected(false); }
-    });
-    return () => { authListener.subscription.unsubscribe(); };
-  }, [supabase, fetchPageData]);
+
+    fetchUserAndNiches();
+  }, [supabase, router]);
   
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase.channel(`videos_realtime_user_${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'videos' }, () => {
-        if (user) { fetchPageData(user.id); }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); }
-  }, [user, supabase, fetchPageData]);
-  
-  const handleDeleteVideo = async (videoId: string) => {
-    const currentVideos = videos;
-    setVideos(current => current.filter(v => v.id !== videoId));
-    const { error } = await supabase.from('videos').delete().eq('id', videoId);
+  const handleCreateNiche = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newNicheName.trim() || !user) return;
+    setIsCreating(true);
+
+    const { data, error } = await supabase
+      .from('niches')
+      .insert({ name: newNicheName, user_id: user.id })
+      .select('id')
+      .single();
+
     if (error) {
-      console.error('Erro ao deletar agendamento:', error);
-      alert('Não foi possível excluir o agendamento. Revertendo.');
-      setVideos(currentVideos);
-    }
-  };
-  
-  const handleDisconnectYouTube = async () => {
-    if (!user) return;
-    const { error } = await supabase.from('youtube_tokens').delete().eq('user_id', user.id);
-    if (error) {
-      alert("Erro ao desconectar a conta.");
-    } else {
-      setIsYouTubeConnected(false);
-      alert("Conta do YouTube desconectada com sucesso.");
+      console.error("Erro ao criar nicho:", error);
+      alert("Não foi possível criar o workspace.");
+      setIsCreating(false);
+    } else if (data) {
+      // Redireciona para a página do novo workspace
+      router.push(`/niche/${data.id}`);
     }
   };
 
-  if (loading) { return <div className="flex items-center justify-center min-h-screen bg-gray-900"><p className="text-white">Carregando...</p></div>; }
-  if (!user) { return <Auth />; }
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <Loader2 className="h-12 w-12 text-teal-400 animate-spin" />
+      </div>
+    );
+  }
 
+  if (!user) {
+    return <Auth />;
+  }
+
+  // Se o usuário está logado e não tem nichos (ou se tem mais de um, a lógica acima não redirecionou)
+  // Mostra a tela de criação do primeiro nicho ou de seleção
+  if (niches.length === 0) {
+    // Cenário 1: Usuário Novo, sem nichos
+    return (
+        <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-4">
+            <div className="w-full max-w-md text-center">
+                <h1 className="text-4xl font-bold text-teal-400 mb-2">Bem-vindo(a)!</h1>
+                <p className="text-lg text-gray-300 mb-8">Vamos começar criando seu primeiro workspace.</p>
+                <form onSubmit={handleCreateNiche} className="flex flex-col items-center gap-4">
+                    <input
+                        type="text"
+                        placeholder="Ex: Cliente de Restaurante"
+                        value={newNicheName}
+                        onChange={(e) => setNewNicheName(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        required
+                    />
+                    <button
+                        type="submit"
+                        disabled={isCreating}
+                        className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-teal-500 disabled:opacity-50"
+                    >
+                        {isCreating ? <Loader2 className="animate-spin" /> : 'Criar Workspace e Entrar'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+  }
+
+  // Cenário 2: Usuário já tem mais de um nicho
   return (
-    <div className="bg-gray-900 min-h-screen text-white">
-      <header className="bg-gray-800/80 backdrop-blur-sm p-4 border-b border-gray-700 sticky top-0 z-20">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold text-teal-400">Social Publisher</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-300">Olá, <strong className="font-medium text-white">{user.email?.split("@")[0]}</strong></span>
-            <button
-              onClick={async () => await supabase.auth.signOut()}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-            >
-              Sair
-            </button>
-          </div>
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-3xl text-center">
+        <h1 className="text-4xl font-bold text-white mb-2">Selecione um Workspace</h1>
+        <p className="text-lg text-gray-400 mb-8">Escolha um workspace para continuar.</p>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {niches.map(niche => (
+            <Link href={`/niche/${niche.id}`} key={niche.id} className="block group">
+              <div className="p-8 bg-gray-800 rounded-lg border border-gray-700 group-hover:border-teal-500 group-hover:bg-gray-700/50 transition-all duration-300 transform group-hover:scale-105 h-full flex items-center justify-center">
+                <span className="text-xl font-semibold text-white">{niche.name}</span>
+              </div>
+            </Link>
+          ))}
+          {/* Futuramente, o botão de criar novo pode ser aqui */}
         </div>
-      </header>
-
-      <main className="container mx-auto p-4 md:p-8">
-        <Navbar />
-        <div className="mt-8">
-          <UploadForm onScheduleSuccess={() => user && fetchPageData(user.id)} />
-        </div>
-        <div className="mt-8">
-          <AccountConnection 
-            isYouTubeConnected={isYouTubeConnected}
-            onDisconnectYouTube={handleDisconnectYouTube}
-          />
-        </div>
-        <hr className="my-8 border-gray-700" />
-        <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold tracking-tight text-white">Meus Agendamentos</h2>
-            <button onClick={() => user && fetchPageData(user.id)} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors" title="Atualizar lista">
-                <RefreshCw size={14} /><span>Atualizar</span>
-            </button>
-        </div>
-        <VideoList 
-  groupedVideos={groupedVideos} 
-  onDelete={handleDeleteVideo} 
-  sortOrder="asc" 
-/>
-      </main>
+        
+         <button onClick={() => supabase.auth.signOut()} className="mt-12 text-sm text-gray-500 hover:text-white transition-colors">Sair</button>
+      </div>
     </div>
   );
 }

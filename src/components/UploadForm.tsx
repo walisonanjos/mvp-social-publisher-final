@@ -9,9 +9,10 @@ import { ptBR } from 'date-fns/locale';
 
 interface UploadFormProps {
   onScheduleSuccess: () => void;
+  nicheId: string;
 }
 
-export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
+export default function UploadForm({ onScheduleSuccess, nicheId }: UploadFormProps) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -24,10 +25,8 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
   const supabase = createClient();
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Normaliza para o início do dia
-  
-  const tenDaysFromNow = addDays(today, 9); // Hoje (dia 1) + 9 dias = 10 dias no total
-  
+  today.setHours(0, 0, 0, 0);
+  const tenDaysFromNow = addDays(today, 9);
   const availableTimes = ['09:00', '11:00', '13:00', '15:00', '17:00'];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,8 +37,8 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!file || !title || !scheduleDate || !scheduleTime) {
-      setError('Por favor, preencha todos os campos obrigatórios.');
+    if (!file || !title || !scheduleDate || !scheduleTime || !nicheId) {
+      setError('Erro: O ID do workspace não foi encontrado. Por favor, recarregue a página.');
       return;
     }
     if (!postToYouTube) {
@@ -74,10 +73,12 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
       finalScheduleDate.setMinutes(parseInt(minutes, 10));
       const scheduled_at = finalScheduleDate.toISOString();
 
+      // MUDANÇA: Adicionamos o niche_id ao objeto de inserção
       const { error: insertError } = await supabase
         .from('videos')
         .insert({
           user_id: user.id,
+          niche_id: nicheId,
           title,
           description,
           video_url: videoUrl,
@@ -115,7 +116,7 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
     <div className="bg-gray-800 p-8 rounded-lg shadow-lg border border-gray-700">
       <h2 className="text-xl font-bold text-white mb-6">Novo Agendamento</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* ...campos de file, title, description... */}
+        {/* Formulário visualmente igual, apenas a lógica de submit mudou */}
         <div>
           <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300 mb-2">
             Arquivo de Vídeo
@@ -130,60 +131,22 @@ export default function UploadForm({ onScheduleSuccess }: UploadFormProps) {
           <label htmlFor="description" className="block text-sm font-medium text-gray-300">Descrição</label>
           <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500" />
         </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div>
              <label className="block text-sm font-medium text-gray-300 mb-2">
               Data do Agendamento
             </label>
-            <DayPicker
-              mode="single"
-              selected={scheduleDate}
-              onSelect={setScheduleDate}
-              locale={ptBR}
-              // CORREÇÃO: Usando a propriedade 'disabled' para ser mais explícito
-              disabled={{ 
-                before: today, 
-                after: tenDaysFromNow 
-              }}
-              className="bg-gray-900 p-2 rounded-md"
-              classNames={{
-                caption: 'flex justify-center py-2 mb-2 relative items-center',
-                caption_label: 'text-sm font-medium text-white',
-                nav: 'flex items-center',
-                nav_button: 'h-6 w-6 bg-transparent hover:bg-gray-700 p-1 rounded-full',
-                nav_button_previous: 'absolute left-1',
-                nav_button_next: 'absolute right-1',
-                table: 'w-full border-collapse',
-                head_row: 'flex font-medium text-gray-400',
-                head_cell: 'w-8 font-normal text-xs',
-                row: 'flex w-full mt-2',
-                cell: 'text-white h-8 w-8 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-teal-500/20 rounded-full',
-                day: 'h-8 w-8 p-0 font-normal hover:bg-teal-500/30 rounded-full transition-colors',
-                day_selected: 'bg-teal-600 text-white hover:bg-teal-700 rounded-full',
-                day_today: 'text-teal-400',
-                day_outside: 'text-gray-500 opacity-50',
-                day_disabled: 'text-gray-600 opacity-50',
-              }}
-            />
+            <DayPicker mode="single" selected={scheduleDate} onSelect={setScheduleDate} locale={ptBR} disabled={{ before: today, after: tenDaysFromNow }} className="bg-gray-900 p-2 rounded-md" classNames={{ caption: 'flex justify-center py-2 mb-2 relative items-center', caption_label: 'text-sm font-medium text-white', nav: 'flex items-center', nav_button: 'h-6 w-6 bg-transparent hover:bg-gray-700 p-1 rounded-full', nav_button_previous: 'absolute left-1', nav_button_next: 'absolute right-1', table: 'w-full border-collapse', head_row: 'flex font-medium text-gray-400', head_cell: 'w-8 font-normal text-xs', row: 'flex w-full mt-2', cell: 'text-white h-8 w-8 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-teal-500/20 rounded-full', day: 'h-8 w-8 p-0 font-normal hover:bg-teal-500/30 rounded-full transition-colors', day_selected: 'bg-teal-600 text-white hover:bg-teal-700 rounded-full', day_today: 'text-teal-400', day_outside: 'text-gray-500 opacity-50', day_disabled: 'text-gray-600 opacity-50', }} />
           </div>
           <div>
             <label htmlFor="scheduleTime" className="block text-sm font-medium text-gray-300 mb-2">
               Hora do Agendamento
             </label>
-            <select
-              id="scheduleTime"
-              value={scheduleTime} 
-              onChange={(e) => setScheduleTime(e.target.value)} 
-              className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-            >
-              {availableTimes.map(time => (
-                <option key={time} value={time}>{time}</option>
-              ))}
+            <select id="scheduleTime" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="mt-1 block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500">
+              {availableTimes.map(time => (<option key={time} value={time}>{time}</option>))}
             </select>
           </div>
         </div>
-        {/* ...resto do formulário... */}
         <div>
           <h3 className="text-sm font-medium text-gray-300 mb-2">Postar em:</h3>
           <div className="flex flex-wrap gap-x-6 gap-y-2">

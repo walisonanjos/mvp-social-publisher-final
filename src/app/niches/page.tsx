@@ -3,15 +3,15 @@
 "use client";
 
 import { useEffect, useState, FormEvent } from "react";
+import Link from 'next/link';
 import { createClient } from "../../lib/supabaseClient";
 import Navbar from "../../components/Navbar";
 import { User } from "@supabase/supabase-js";
+import { Loader2, PlusCircle } from "lucide-react";
 
-// Definindo um tipo para nossos nichos para manter o código limpo
 interface Niche {
   id: string;
   name: string;
-  created_at: string;
 }
 
 export default function NichesPage() {
@@ -20,6 +20,7 @@ export default function NichesPage() {
   const [niches, setNiches] = useState<Niche[]>([]);
   const [newNicheName, setNewNicheName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -29,12 +30,12 @@ export default function NichesPage() {
       if (user) {
         const { data: nichesData, error: nichesError } = await supabase
           .from('niches')
-          .select('*')
+          .select('id, name')
           .eq('user_id', user.id)
           .order('created_at', { ascending: true });
         
         if (nichesError) {
-          setError('Erro ao carregar seus nichos.');
+          setError('Erro ao carregar seus workspaces.');
           console.error(nichesError);
         } else {
           setNiches(nichesData || []);
@@ -48,78 +49,66 @@ export default function NichesPage() {
 
   const handleCreateNiche = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newNicheName.trim()) {
-      setError("O nome do nicho não pode estar em branco.");
-      return;
-    }
-    if (!user) {
-      setError("Você precisa estar logado para criar um nicho.");
-      return;
-    }
+    if (!newNicheName.trim() || !user) return;
+    setIsCreating(true);
+    setError("");
 
     const { data, error: insertError } = await supabase
       .from('niches')
       .insert({ name: newNicheName, user_id: user.id })
-      .select()
+      .select('id, name')
       .single();
 
     if (insertError) {
-      setError("Ocorreu um erro ao criar o nicho.");
+      setError("Ocorreu um erro ao criar o workspace.");
       console.error(insertError);
     } else if (data) {
-      // Adiciona o novo nicho à lista na tela sem precisar recarregar tudo
       setNiches(currentNiches => [...currentNiches, data]);
-      setNewNicheName(""); // Limpa o campo do formulário
-      setError("");
+      setNewNicheName("");
     }
+    setIsCreating(false);
   };
-
-  if (loading) {
-    return <div className="text-center p-8"><p className="text-white">Carregando...</p></div>;
-  }
 
   return (
     <main className="container mx-auto p-4 md:p-8">
-      <Navbar />
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold tracking-tight text-white mb-6">
-          Gerenciar Nichos (Workspaces)
-        </h2>
-        
-        {/* Formulário para criar novo nicho */}
-        <div className="bg-gray-800 p-6 rounded-lg mb-8 border border-gray-700">
-          <form onSubmit={handleCreateNiche} className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              placeholder="Nome do novo nicho (ex: Cliente de Advocacia)"
-              value={newNicheName}
-              onChange={(e) => setNewNicheName(e.target.value)}
-              className="flex-grow bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-            />
-            <button
-              type="submit"
-              className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors"
-            >
-              Criar Nicho
-            </button>
-          </form>
-          {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
-        </div>
-
-        {/* Lista de nichos existentes */}
-        <div className="space-y-4">
-            {niches.length > 0 ? (
-                niches.map(niche => (
-                    <div key={niche.id} className="bg-gray-800/50 p-4 rounded-lg flex justify-between items-center border border-gray-700/80">
-                        <span className="font-medium text-white">{niche.name}</span>
-                        {/* Futuramente, aqui teremos botões para gerenciar e conectar contas */}
+        <div className="w-full max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+                <h1 className="text-4xl font-bold text-white">Seus Workspaces</h1>
+                <p className="text-lg text-gray-400 mt-2">Selecione um workspace para gerenciar ou crie um novo.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-12">
+                {niches.map(niche => (
+                    <Link href={`/niche/${niche.id}`} key={niche.id} className="block group">
+                    <div className="p-8 bg-gray-800 rounded-lg border border-gray-700 group-hover:border-teal-500 group-hover:bg-gray-700/50 transition-all duration-300 transform group-hover:scale-105 h-40 flex items-center justify-center text-center">
+                        <span className="text-xl font-semibold text-white">{niche.name}</span>
                     </div>
-                ))
-            ) : (
-                <p className="text-gray-400 text-center py-4">Você ainda não criou nenhum nicho.</p>
-            )}
+                    </Link>
+                ))}
+            </div>
+
+            <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4">Criar Novo Workspace</h3>
+                <form onSubmit={handleCreateNiche} className="flex flex-col sm:flex-row gap-4">
+                    <input
+                    type="text"
+                    placeholder="Nome do novo workspace"
+                    value={newNicheName}
+                    onChange={(e) => setNewNicheName(e.target.value)}
+                    className="flex-grow bg-gray-900 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500"
+                    />
+                    <button
+                    type="submit"
+                    disabled={isCreating}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center justify-center w-full sm:w-auto"
+                    >
+                    {isCreating ? <Loader2 className="animate-spin" /> : <PlusCircle size={20} className="mr-2"/>}
+                    {isCreating ? '' : 'Criar'}
+                    </button>
+                </form>
+                {error && <p className="text-red-400 mt-2 text-sm">{error}</p>}
+            </div>
         </div>
-      </div>
     </main>
   );
 }
