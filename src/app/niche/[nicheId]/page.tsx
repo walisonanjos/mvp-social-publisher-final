@@ -14,10 +14,16 @@ import Navbar from "../../../components/Navbar";
 import AccountConnection from "../../../components/AccountConnection";
 import { Video } from "../../page";
 
-// CORREÇÃO: Removemos o tipo 'NichePageProps' e vamos tipar diretamente na função.
+// MUDANÇA: Definindo um tipo formal e completo para as propriedades da página
+type NichePageProps = {
+  params: {
+    nicheId: string;
+  };
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
-// CORREÇÃO: Aplicamos o tipo diretamente nos parâmetros da função.
-export default function NichePage({ params }: { params: { nicheId: string } }) {
+// MUDANÇA: Usando o novo tipo 'NichePageProps'
+export default function NichePage({ params }: NichePageProps) {
   const { nicheId } = params;
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
@@ -56,11 +62,11 @@ export default function NichePage({ params }: { params: { nicheId: string } }) {
       .from('social_connections')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
-      .eq('niche_id', nicheId)
-      .eq('platform', 'youtube');
-
-    setIsYouTubeConnected(!!count && count > 0);
-
+      .eq('niche_id', nicheId) 
+      .eq('platform', 'youtube'); 
+    
+    setIsYouTubeConnected(!!count && count > 0); 
+    
     const { data: nicheData } = await supabase.from('niches').select('name').eq('id', nicheId).single();
     if (nicheData) setNicheName(nicheData.name);
 
@@ -76,13 +82,13 @@ export default function NichePage({ params }: { params: { nicheId: string } }) {
     };
     setupPage();
   }, [supabase, fetchPageData]);
-
+  
   const handleDeleteVideo = async (videoId: string) => {
     setVideos(current => current.filter(v => v.id !== videoId));
     const { error } = await supabase.from('videos').delete().eq('id', videoId);
     if (error) console.error('Erro ao deletar agendamento:', error);
   };
-
+  
   const handleDisconnectYouTube = async () => {
     if (!user) return;
     const { error } = await supabase.from('social_connections')
@@ -104,10 +110,10 @@ export default function NichePage({ params }: { params: { nicheId: string } }) {
       <header className="bg-gray-800/80 backdrop-blur-sm p-4 border-b border-gray-700 sticky top-0 z-20">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <Link href="/niches" className="text-gray-400 hover:text-white transition-colors" title="Ver outros Workspaces">
-              <ArrowLeft size={20} />
-            </Link>
-            <h1 className="text-xl font-bold text-white">{nicheName}</h1>
+              <Link href="/niches" className="text-gray-400 hover:text-white transition-colors" title="Ver outros Workspaces">
+                  <ArrowLeft size={20} />
+              </Link>
+              <h1 className="text-xl font-bold text-white">{nicheName}</h1>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-gray-300 hidden sm:inline">Olá, <strong className="font-medium text-white">{user.email?.split("@")[0]}</strong></span>
@@ -122,7 +128,7 @@ export default function NichePage({ params }: { params: { nicheId: string } }) {
           <UploadForm onScheduleSuccess={() => fetchPageData(user.id)} nicheId={nicheId} />
         </div>
         <div className="mt-8">
-          <AccountConnection
+          <AccountConnection 
             isYouTubeConnected={isYouTubeConnected}
             onDisconnectYouTube={handleDisconnectYouTube}
             nicheId={nicheId}
@@ -130,10 +136,10 @@ export default function NichePage({ params }: { params: { nicheId: string } }) {
         </div>
         <hr className="my-8 border-gray-700" />
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold tracking-tight text-white">Meus Agendamentos</h2>
-          <button onClick={() => fetchPageData(user.id)} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors" title="Atualizar lista">
-            <RefreshCw size={14} /><span>Atualizar</span>
-          </button>
+            <h2 className="text-2xl font-bold tracking-tight text-white">Meus Agendamentos</h2>
+            <button onClick={() => fetchPageData(user.id)} className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-700/50 hover:bg-gray-700 border border-gray-600 rounded-lg transition-colors" title="Atualizar lista">
+                <RefreshCw size={14} /><span>Atualizar</span>
+            </button>
         </div>
         <VideoList groupedVideos={groupedVideos} onDelete={handleDeleteVideo} sortOrder="asc" />
       </main>
