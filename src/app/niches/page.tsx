@@ -5,9 +5,9 @@
 import { useEffect, useState, FormEvent } from "react";
 import Link from 'next/link';
 import { createClient } from "../../lib/supabaseClient";
-import Navbar from "../../components/Navbar";
+// MUDANÇA: Navbar não é mais importado aqui
 import { User } from "@supabase/supabase-js";
-import { Loader2, PlusCircle } from "lucide-react";
+import { Loader2, PlusCircle } from "lucide-react"; // MUDANÇA: PlusCircle importado
 
 interface Niche {
   id: string;
@@ -18,8 +18,7 @@ export default function NichesPage() {
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
   const [niches, setNiches] = useState<Niche[]>([]);
-  const [newNicheName, setNewNicheName] = useState("");
-  const [loading, setLoading] = useState(true);
+  // MUDANÇA: O estado de 'loading' foi removido
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState("");
 
@@ -41,7 +40,6 @@ export default function NichesPage() {
           setNiches(nichesData || []);
         }
       }
-      setLoading(false);
     };
 
     fetchInitialData();
@@ -50,10 +48,11 @@ export default function NichesPage() {
   const handleCreateNiche = async (e: FormEvent) => {
     e.preventDefault();
     if (!newNicheName.trim() || !user) return;
+    
     setIsCreating(true);
     setError("");
 
-    const { data, error: insertError } = await supabase
+    const { data: newNiche, error: insertError } = await supabase
       .from('niches')
       .insert({ name: newNicheName, user_id: user.id })
       .select('id, name')
@@ -62,12 +61,14 @@ export default function NichesPage() {
     if (insertError) {
       setError("Ocorreu um erro ao criar o workspace.");
       console.error(insertError);
-    } else if (data) {
-      setNiches(currentNiches => [...currentNiches, data]);
+    } else if (newNiche) {
+      setNiches(currentNiches => [...currentNiches, newNiche]);
       setNewNicheName("");
     }
     setIsCreating(false);
   };
+  
+  const [newNicheName, setNewNicheName] = useState("");
 
   return (
     <main className="container mx-auto p-4 md:p-8">

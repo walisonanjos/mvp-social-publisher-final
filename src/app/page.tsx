@@ -8,15 +8,14 @@ import Link from 'next/link';
 import { createClient } from "../lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
 import Auth from "../components/Auth";
-import { Loader2, PlusCircle } from "lucide-react";
+// MUDANÇA: O ícone 'PlusCircle' foi removido das importações.
+import { Loader2 } from "lucide-react";
 
-// Definindo a interface para nossos nichos
 export interface Niche {
   id: string;
   name: string;
 }
 
-// A interface Video agora vive aqui, mas poderia ser movida para um arquivo de tipos no futuro
 export interface Video {
   id: string;
   title: string;
@@ -37,7 +36,6 @@ export default function HomePage() {
   const [newNicheName, setNewNicheName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   
-  // Efeito para buscar o usuário e seus nichos existentes
   useEffect(() => {
     const fetchUserAndNiches = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -52,11 +50,10 @@ export default function HomePage() {
         if (error) {
           console.error("Erro ao buscar nichos:", error);
         } else if (nichesData) {
-          // Se o usuário tem apenas um nicho, redireciona direto para ele
           if (nichesData.length === 1) {
             router.push(`/niche/${nichesData[0].id}`);
-          } else {
-            setNiches(nichesData);
+          } else if (nichesData.length > 1) {
+             router.push('/niches');
           }
         }
       }
@@ -82,7 +79,6 @@ export default function HomePage() {
       alert("Não foi possível criar o workspace.");
       setIsCreating(false);
     } else if (data) {
-      // Redireciona para a página do novo workspace
       router.push(`/niche/${data.id}`);
     }
   };
@@ -99,10 +95,7 @@ export default function HomePage() {
     return <Auth />;
   }
 
-  // Se o usuário está logado e não tem nichos (ou se tem mais de um, a lógica acima não redirecionou)
-  // Mostra a tela de criação do primeiro nicho ou de seleção
   if (niches.length === 0) {
-    // Cenário 1: Usuário Novo, sem nichos
     return (
         <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-4">
             <div className="w-full max-w-md text-center">
@@ -129,27 +122,11 @@ export default function HomePage() {
         </div>
     );
   }
-
-  // Cenário 2: Usuário já tem mais de um nicho
+  
+  // Se o usuário já tiver nichos, a lógica acima redireciona, então este retorno é um fallback.
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-3xl text-center">
-        <h1 className="text-4xl font-bold text-white mb-2">Selecione um Workspace</h1>
-        <p className="text-lg text-gray-400 mb-8">Escolha um workspace para continuar.</p>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {niches.map(niche => (
-            <Link href={`/niche/${niche.id}`} key={niche.id} className="block group">
-              <div className="p-8 bg-gray-800 rounded-lg border border-gray-700 group-hover:border-teal-500 group-hover:bg-gray-700/50 transition-all duration-300 transform group-hover:scale-105 h-full flex items-center justify-center">
-                <span className="text-xl font-semibold text-white">{niche.name}</span>
-              </div>
-            </Link>
-          ))}
-          {/* Futuramente, o botão de criar novo pode ser aqui */}
-        </div>
-        
-         <button onClick={() => supabase.auth.signOut()} className="mt-12 text-sm text-gray-500 hover:text-white transition-colors">Sair</button>
+       <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <p className="text-white">Redirecionando...</p>
       </div>
-    </div>
-  );
+  )
 }

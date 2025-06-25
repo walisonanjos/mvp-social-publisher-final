@@ -1,7 +1,9 @@
+// src/components/Auth.tsx
 'use client';
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import Image from 'next/image'; // MUDANÇA: Importando o componente de Imagem
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -41,10 +43,14 @@ export default function Auth() {
     <div className="flex flex-col justify-center items-center h-full py-12 px-4">
       
       <div className="text-center mb-8">
-        <img
+        {/* MUDANÇA: Usando o componente <Image> otimizado */}
+        <Image
           src="/icon.png"
           alt="Social Publisher MVP Logo"
-          className="mx-auto h-20 w-auto"
+          width={80}
+          height={80}
+          className="mx-auto"
+          priority
         />
         <h1 className="mt-6 text-4xl font-extrabold text-white tracking-tight">
           Social Publisher MVP
