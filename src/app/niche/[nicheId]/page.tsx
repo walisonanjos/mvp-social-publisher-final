@@ -1,16 +1,16 @@
-// src/app/niche/[nicheId]/page.tsx
-
 import NichePageClient from "@/components/NichePageClient";
 
-// Tipagem para as props que a página recebe do Next.js
+// A tipagem para as props da página
 type Props = {
   params: {
     nicheId: string;
   };
 };
 
-// Este é um Server Component (sem "use client").
-export default function NichePage({ params }: Props) {
+// CORREÇÃO: Adicionamos a palavra 'async' na função
+export default async function NichePage({ params }: Props) {
   const { nicheId } = params;
+
+  // Renderiza o componente de cliente, passando o ID do nicho
   return <NichePageClient nicheId={nicheId} />;
 }

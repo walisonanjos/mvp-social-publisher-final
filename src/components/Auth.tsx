@@ -1,117 +1,120 @@
-// src/components/Auth.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { createClient } from '@/lib/supabaseClient';
-import Image from 'next/image'; // MUDANÇA: Importando o componente de Imagem
+import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabaseClient";
+import { Loader2 } from "lucide-react";
 
 export default function Auth() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const supabase = createClient();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleAuthAction = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-        alert('Por favor, preencha e-mail e senha.');
-        return;
-    }
-    try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      alert('Cadastro realizado! Verifique seu e-mail para confirmar a conta.');
-    } catch (error) {
-      alert('Erro ao cadastrar: ' + (error as Error).message);
-    }
-  };
+    setLoading(true);
+    setError("");
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-     if (!email || !password) {
-        alert('Por favor, preencha e-mail e senha.');
-        return;
-    }
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-    } catch (error) {
-      alert('Erro no login: ' + (error as Error).message);
+      if (isSignUp) {
+        // Lógica de Cadastro (Sign Up)
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (signUpError) throw signUpError;
+        alert(
+          "Cadastro realizado! Por favor, verifique seu e-mail para confirmar a conta.",
+        );
+      } else {
+        // Lógica de Login (Sign In)
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (signInError) throw signInError;
+
+        // CORREÇÃO: Força a atualização da página para carregar o estado de logado.
+        // Esta é a garantia explícita da reatividade.
+        router.refresh();
+      }
+    } catch (err: any) {
+      setError(err.error_description || err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col justify-center items-center h-full py-12 px-4">
-      
-      <div className="text-center mb-8">
-        {/* MUDANÇA: Usando o componente <Image> otimizado */}
-        <Image
-          src="/icon.png"
-          alt="Social Publisher MVP Logo"
-          width={80}
-          height={80}
-          className="mx-auto"
-          priority
-        />
-        <h1 className="mt-6 text-4xl font-extrabold text-white tracking-tight">
-          Social Publisher MVP
-        </h1>
-        <p className="mt-2 text-lg text-teal-400">
-          Agende seu conteúdo. Otimize seu tempo.
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-900 flex flex-col justify-center items-center p-4">
+      <div className="w-full max-w-sm mx-auto overflow-hidden bg-gray-800 rounded-lg shadow-md">
+        <div className="px-6 py-8">
+          <h2 className="text-3xl font-bold text-center text-white">
+            Social Publisher
+          </h2>
+          <p className="mt-1 text-center text-gray-400">
+            {isSignUp ? "Crie sua conta" : "Acesse seu workspace"}
+          </p>
 
-      <div className="w-full max-w-md p-8 bg-gray-800 rounded-2xl shadow-xl border border-gray-700">
-        <form className="space-y-6" onSubmit={handleSignIn}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-              Email
-            </label>
-            <div className="mt-1">
+          <form onSubmit={handleAuthAction}>
+            <div className="w-full mt-4">
               <input
-                id="email"
+                className="block w-full px-4 py-2 mt-2 text-gray-200 placeholder-gray-500 bg-gray-700 border border-gray-600 rounded-lg focus:border-teal-400 focus:ring-opacity-40 focus:outline-none focus:ring focus:ring-teal-300"
                 type="email"
+                placeholder="Endereço de e-mail"
+                aria-label="Email Address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu.email@exemplo.com"
                 required
-                className="block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500"
               />
             </div>
-          </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-              Senha
-            </label>
-            <div className="mt-1">
+            <div className="w-full mt-4">
               <input
-                id="password"
+                className="block w-full px-4 py-2 mt-2 text-gray-200 placeholder-gray-500 bg-gray-700 border border-gray-600 rounded-lg focus:border-teal-400 focus:ring-opacity-40 focus:outline-none focus:ring focus:ring-teal-300"
                 type="password"
+                placeholder="Senha"
+                aria-label="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
                 required
-                className="block w-full bg-gray-900 border border-gray-600 rounded-md shadow-sm py-3 px-4 text-white focus:outline-none focus:ring-teal-500 focus:border-teal-500"
               />
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <button 
-              type="button"
-              onClick={handleSignUp}
-              className="w-full flex justify-center py-3 px-4 border border-teal-500 text-teal-400 font-medium rounded-md shadow-sm hover:bg-teal-500/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-teal-500 transition-colors"
-            >
-              Cadastrar
-            </button>
+            {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+
+            <div className="flex items-center justify-center mt-6">
+              <button
+                disabled={loading}
+                className="w-full px-6 py-3 text-sm font-medium tracking-wide text-white capitalize transition-colors duration-300 transform bg-teal-600 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring focus:ring-teal-300 focus:ring-opacity-50 disabled:opacity-50"
+              >
+                {loading ? (
+                  <Loader2 className="mx-auto animate-spin" />
+                ) : isSignUp ? (
+                  "Cadastrar"
+                ) : (
+                  "Entrar"
+                )}
+              </button>
+            </div>
+          </form>
+
+          <div className="flex items-center justify-center py-4 text-center bg-gray-800">
+            <span className="text-sm text-gray-400">
+              {isSignUp ? "Já tem uma conta?" : "Não tem uma conta?"}
+            </span>
             <button
-              type="submit"
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-teal-500 transition-colors"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="mx-2 text-sm font-bold text-teal-400 hover:underline"
             >
-              Entrar
+              {isSignUp ? "Entrar" : "Cadastre-se"}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
